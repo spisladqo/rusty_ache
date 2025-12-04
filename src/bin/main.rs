@@ -5,32 +5,41 @@ use rusty_ache::engine::scene::game_object::position::Position;
 use rusty_ache::interface::{ObjectWithImage, create_obj_with_img, init_end_scene, init_engine, init_scene};
 use rusty_ache::screen::{HEIGHT, WIDTH};
 
-fn create_tile_objs() -> Vec<ObjectWithImage<'static>> {
+fn create_tile_objs(layer_num: i32, layer_gap_px: i32) -> Vec<ObjectWithImage<'static>> {
     let tile_width = 93;
     let tile_height = 57;
-    let size = 10;
+    let size = 2;
     let mut tile_objs = Vec::new();
 
-    for sum in 0..=size*2 {
-        let tiles_in_row = if sum <= size {
-            sum + 1
-        } else {
-            size * 2 - sum + 1
-        };
+    for layer in 0..layer_num {
+        // Calculate vertical offset for this layer
+        // Each layer is stacked higher (negative Y) or lower (positive Y) depending on your coordinate system
+        let layer_y_offset = layer * layer_gap_px;
 
-        let start_q = if sum <= size { 0 } else { sum - size };
+        for sum in 0..=size*2 {
+            let tiles_in_row = if sum <= size {
+                sum + 1
+            } else {
+                size * 2 - sum + 1
+            };
 
-        for i in 0..tiles_in_row {
-            let q = start_q + i;
-            let r = sum - q;
+            let start_q = if sum <= size { 0 } else { sum - size };
 
-            let x = (q as i32 * (tile_width / 2)) - (r as i32 * (tile_width / 2));
-            let y = (q as i32 * (tile_height / 2)) + (r as i32 * (tile_height / 2));
+            for i in 0..tiles_in_row {
+                let q = start_q + i;
+                let r = sum - q;
 
-            println!("position of tile object is ({}, {})", x, y);
+                let x = (q as i32 * (tile_width / 2)) - (r as i32 * (tile_width / 2));
+                let mut y = (q as i32 * (tile_height / 2)) + (r as i32 * (tile_height / 2));
+                
+                // Apply layer offset to Y coordinate
+                y += layer_y_offset;
 
-            let tile_obj = create_obj_with_img("src/bin/resources/tile3.png", x, y, false);
-            tile_objs.push(tile_obj);
+                println!("Layer {}: position of tile object is ({}, {})", layer, x, y);
+
+                let tile_obj = create_obj_with_img("src/bin/resources/tile3.png", x, y, false);
+                tile_objs.push(tile_obj);
+            }
         }
     }
     
@@ -44,9 +53,9 @@ fn main() {
     // let tall_house_obj = create_obj_with_img("src/bin/resources/tall_house.png", 210, -80, true);
     // let skyscraper_obj = create_obj_with_img("src/bin/resources/skyscraper.png", 150, 55, true);
     // let cabin_obj = create_obj_with_img("src/bin/resources/cabin.png", 280, -60, true);
-    let main_ship_obj = create_obj_with_img("src/bin/resources/white_ship.png", -10, -10, true);
+    let main_ship_obj = create_obj_with_img("src/bin/resources/white_ship.png", 0, 0, true);
 
-    let tiles_vec = create_tile_objs();
+    let tiles_vec = create_tile_objs(1, 600);
     let tiles_slice : &[ObjectWithImage] = &tiles_vec;
 
     // let hermit_house_obj = create_obj_with_img("src/bin/resources/junk_house.png", 400, 240, true);
