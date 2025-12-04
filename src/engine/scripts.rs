@@ -26,6 +26,8 @@ pub fn main_obj_script() -> (i32, i32) {
     let mut st = state.lock().unwrap();
     let elapsed = st.last_cycle_start.elapsed();
 
+    let dmove = (0, 0); // 7 times higher
+
     if st.jumping {
         // currently in jumping phase
         if elapsed >= JUMP_DURATION {
@@ -35,7 +37,7 @@ pub fn main_obj_script() -> (i32, i32) {
             return (0, 0);
         } else {
             // still jumping
-            return (0, -4); // height of jump
+            return dmove; // height of jump
         }
     } else {
         // waiting for the 3-second cooldown
@@ -43,7 +45,7 @@ pub fn main_obj_script() -> (i32, i32) {
             // start a new jump
             st.jumping = true;
             st.last_cycle_start = Instant::now(); // mark start of jump
-            return (0, -4);
+            return dmove;
         } else {
             // still cooling down
             return (0, 0);

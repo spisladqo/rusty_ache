@@ -2,30 +2,57 @@ use rusty_ache::engine::Engine;
 use rusty_ache::engine::scene::game_object::GameObject;
 use rusty_ache::engine::scene::game_object::components::script::Script;
 use rusty_ache::engine::scene::game_object::position::Position;
-use rusty_ache::interface::{create_obj_with_img, init_end_scene, init_engine, init_scene};
+use rusty_ache::interface::{ObjectWithImage, create_obj_with_img, init_end_scene, init_engine, init_scene};
 use rusty_ache::screen::{HEIGHT, WIDTH};
 
-fn main() {
-    let tower_obj = create_obj_with_img("src/bin/resources/tower.png", 82, 37, true);
-    let junk_house_obj = create_obj_with_img("src/bin/resources/junk_house.png", 150, -150, true);
-    let pool_house_obj = create_obj_with_img("src/bin/resources/pool_house.png", 15, -25, true);
-    let tall_house_obj = create_obj_with_img("src/bin/resources/tall_house.png", 210, -80, true);
-    let skyscraper_obj = create_obj_with_img("src/bin/resources/skyscraper.png", 150, 55, true);
-    let cabin_obj = create_obj_with_img("src/bin/resources/cabin.png", 280, -60, true);
-    let main_ship_obj = create_obj_with_img("src/bin/resources/white_ship.png", 0, 0, true);
+fn create_tile_objs() -> Vec<ObjectWithImage<'static>> {
+    let tile_width = 93;
+    let tile_height = 57;
+    let size = 10;
+    let mut tile_objs = Vec::new();
 
-    let hermit_house_obj = create_obj_with_img("src/bin/resources/junk_house.png", 400, 240, true);
+    for sum in 0..=size*2 {
+        let tiles_in_row = if sum <= size {
+            sum + 1
+        } else {
+            size * 2 - sum + 1
+        };
+
+        let start_q = if sum <= size { 0 } else { sum - size };
+
+        for i in 0..tiles_in_row {
+            let q = start_q + i;
+            let r = sum - q;
+
+            let x = (q as i32 * (tile_width / 2)) - (r as i32 * (tile_width / 2));
+            let y = (q as i32 * (tile_height / 2)) + (r as i32 * (tile_height / 2));
+
+            println!("position of tile object is ({}, {})", x, y);
+
+            let tile_obj = create_obj_with_img("src/bin/resources/tile3.png", x, y, false);
+            tile_objs.push(tile_obj);
+        }
+    }
+    
+    return tile_objs;
+}
+
+fn main() {
+    // let tower_obj = create_obj_with_img("src/bin/resources/tower.png", 82, 37, true);
+    // let junk_house_obj = create_obj_with_img("src/bin/resources/junk_house.png", 150, -150, true);
+    // let pool_house_obj = create_obj_with_img("src/bin/resources/pool_house.png", 15, -25, true);
+    // let tall_house_obj = create_obj_with_img("src/bin/resources/tall_house.png", 210, -80, true);
+    // let skyscraper_obj = create_obj_with_img("src/bin/resources/skyscraper.png", 150, 55, true);
+    // let cabin_obj = create_obj_with_img("src/bin/resources/cabin.png", 280, -60, true);
+    let main_ship_obj = create_obj_with_img("src/bin/resources/white_ship.png", -10, -10, true);
+
+    let tiles_vec = create_tile_objs();
+    let tiles_slice : &[ObjectWithImage] = &tiles_vec;
+
+    // let hermit_house_obj = create_obj_with_img("src/bin/resources/junk_house.png", 400, 240, true);
 
     let scene = init_scene(
-        &[
-            cabin_obj,
-            skyscraper_obj,
-            hermit_house_obj,
-            tower_obj,
-            tall_house_obj,
-            junk_house_obj,
-            pool_house_obj,
-        ],
+        tiles_slice,
         main_ship_obj,
     );
 
@@ -37,7 +64,7 @@ fn main() {
     std::thread::spawn(move || {
         loop {
             let (x, y) = *main_pos_arc.read().unwrap();
-            println!("position of main object is ({}, {})", x, y);
+            // println!("position of main object is ({}, {})", x, y);
             if x > 150 {
                 end_scene_flag.store(true, std::sync::atomic::Ordering::SeqCst);
             }
