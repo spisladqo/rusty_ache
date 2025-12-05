@@ -115,7 +115,7 @@ pub fn init_scene(objs: &[ObjectWithImage], main_obj: ObjectWithImage) -> Scene 
                     .unwrap(),
             ),
             true,
-            (60, -60),
+            (360/2 - 76/2, -360/2 + 46/2),   // CHANGE
         ))],
         Position {
             x: main_obj.x,

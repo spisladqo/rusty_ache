@@ -5,7 +5,6 @@
 //!
 //! This allows game entities to display visual representations with optional shadow
 //! and positional offset adjustments.
-
 use std::any::Any;
 
 use crate::engine::scene::game_object::components::{Component, ComponentType};

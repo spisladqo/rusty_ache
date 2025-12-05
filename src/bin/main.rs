@@ -6,14 +6,17 @@ use rusty_ache::interface::{ObjectWithImage, create_obj_with_img, init_end_scene
 use rusty_ache::screen::{HEIGHT, WIDTH};
 
 fn create_tile_objs(layer_num: i32, layer_gap_px: i32) -> Vec<ObjectWithImage<'static>> {
-    let tile_width = 93;
-    let tile_height = 57;
+    let tile_width: i32 = 93;
+    let tile_height: i32 = 57;
     let size = 2;
     let mut tile_objs = Vec::new();
 
+    // Calculate center of screen
+    let center_x: i32 = (WIDTH as i32) / 2 - (tile_width as i32)/ 2;
+    let center_y: i32 = -(HEIGHT as i32) / 2 + (tile_height as i32) / 2;
+
     for layer in 0..layer_num {
         // Calculate vertical offset for this layer
-        // Each layer is stacked higher (negative Y) or lower (positive Y) depending on your coordinate system
         let layer_y_offset = layer * layer_gap_px;
 
         for sum in 0..=size*2 {
@@ -29,11 +32,16 @@ fn create_tile_objs(layer_num: i32, layer_gap_px: i32) -> Vec<ObjectWithImage<'s
                 let q = start_q + i;
                 let r = sum - q;
 
-                let x = (q as i32 * (tile_width / 2)) - (r as i32 * (tile_width / 2));
-                let mut y = (q as i32 * (tile_height / 2)) + (r as i32 * (tile_height / 2));
+                // Calculate hexagonal grid coordinates relative to center
+                let x_offset = (q as i32 * (tile_width / 2)) - (r as i32 * (tile_width / 2));
+                let mut y_offset = (q as i32 * (tile_height / 2)) + (r as i32 * (tile_height / 2));
                 
                 // Apply layer offset to Y coordinate
-                y += layer_y_offset;
+                y_offset += layer_y_offset;
+
+                // Calculate final position centered on screen
+                let x = center_x + x_offset;
+                let y = center_y + y_offset;
 
                 println!("Layer {}: position of tile object is ({}, {})", layer, x, y);
 
