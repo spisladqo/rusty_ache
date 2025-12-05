@@ -5,10 +5,11 @@ use rusty_ache::engine::scene::game_object::position::Position;
 use rusty_ache::interface::{ObjectWithImage, create_obj_with_img, init_end_scene, init_engine, init_scene};
 use rusty_ache::screen::{HEIGHT, WIDTH};
 
+const tile_width: i32 = 93;
+const tile_height: i32 = 57;
+const size: i32 = 2;
+
 fn create_tile_objs(layer_num: i32, layer_gap_px: i32) -> Vec<ObjectWithImage<'static>> {
-    let tile_width: i32 = 93;
-    let tile_height: i32 = 57;
-    let size = 2;
     let mut tile_objs = Vec::new();
 
     // Calculate center of screen
@@ -61,7 +62,8 @@ fn main() {
     // let tall_house_obj = create_obj_with_img("src/bin/resources/tall_house.png", 210, -80, true);
     // let skyscraper_obj = create_obj_with_img("src/bin/resources/skyscraper.png", 150, 55, true);
     // let cabin_obj = create_obj_with_img("src/bin/resources/cabin.png", 280, -60, true);
-    let main_ship_obj = create_obj_with_img("src/bin/resources/white_ship.png", 0, 0, true);
+    // CHANGE
+    let main_ship_obj = create_obj_with_img("src/bin/resources/white_ship.png", 0, 50, true);
 
     let tiles_vec = create_tile_objs(1, 600);
     let tiles_slice : &[ObjectWithImage] = &tiles_vec;

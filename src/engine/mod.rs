@@ -16,10 +16,12 @@ pub mod scripts;
 use crate::Resolution;
 use crate::engine::config::Config;
 use crate::engine::scene::Scene;
-use crate::engine::scene::game_object::Object;
+use crate::engine::scene::game_object::{Object, GameObject};
+use crate::interface::ObjectWithImage;
 use crate::engine::scene_manager::{EndScene, SceneManager};
 use crate::engine::scripts::main_obj_script;
 use crate::interface::{create_obj_with_img, init_scene};
+use crate::interface::create_gameobj_vec;
 use crate::render::renderer::{DEFAULT_BACKGROUND_COLOR, Renderer};
 use crate::screen::{App, HEIGHT, WIDTH};
 // use crate::end_scene::EndScene;
@@ -31,6 +33,116 @@ use std::time::{Duration, Instant};
 use std::{thread, vec};
 use winit::event_loop::{ControlFlow, EventLoop};
 use winit::window::Window;
+
+#[derive(Clone, PartialEq)]
+pub enum EntityKind {
+    Player,
+    Tile,
+    TileFalling,
+    TileDestroyed,
+}
+
+#[derive(Clone)]
+pub struct Entity {
+    id: i32,
+    obj: GameObject,
+    kind: EntityKind,
+}
+
+// Entity Manager Structure
+pub struct EntityManager {
+    entities: Vec<Entity>,
+    next_id: i32,
+}
+
+impl EntityManager {
+    pub fn new() -> Self {
+        EntityManager {
+            entities: Vec::new(),
+            next_id: 1, // Start IDs from 1
+        }
+    }
+    
+    pub fn add_entity(&mut self, mut entity: Entity) -> i32 {
+        entity.id = self.next_id;
+        let id = entity.id;
+        self.entities.push(entity);
+        self.next_id += 1;
+        id
+    }
+    
+    pub fn add_entities(&mut self, new_entities: Vec<Entity>) -> Vec<i32> {
+        let mut ids = Vec::new();
+        for entity in new_entities {
+            ids.push(self.add_entity(entity));
+        }
+        ids
+    }
+
+    pub fn get_entities(&self) -> &[Entity] {
+        &self.entities
+    }
+
+    pub fn get_entities_mut(&mut self) -> &mut [Entity] {
+        &mut self.entities
+    }
+    
+    pub fn get_entity(&self, id: i32) -> Option<&Entity> {
+        self.entities.iter().find(|e| e.id == id)
+    }
+
+    pub fn get_entity_mut(&mut self, id: i32) -> Option<&mut Entity> {
+        self.entities.iter_mut().find(|e| e.id == id)
+    }
+        pub fn remove_entity(&mut self, id: i32) -> Option<Entity> {
+        if let Some(pos) = self.entities.iter().position(|e| e.id == id) {
+            Some(self.entities.remove(pos))
+        } else {
+            None
+        }
+    }
+    
+    pub fn clear(&mut self) {
+        self.entities.clear();
+    }
+    
+    pub fn count(&self) -> usize {
+        self.entities.len()
+    }
+    
+    pub fn get_entities_by_kind(&self, kind: EntityKind) -> Vec<&Entity> {
+        self.entities.iter()
+            .filter(|e| matches!(&e.kind, k if k == &kind))
+            .collect()
+    }
+    
+    pub fn get_entities_by_kind_mut(&mut self, kind: EntityKind) -> Vec<&mut Entity> {
+        self.entities.iter_mut()
+            .filter(|e| matches!(&e.kind, k if k == &kind))
+            .collect()
+    }
+    
+    // Batch operations
+    pub fn update_all<F>(&mut self, mut f: F) 
+    where
+        F: FnMut(&mut Entity),
+    {
+        for entity in &mut self.entities {
+            f(entity);
+        }
+    }
+    
+    pub fn update_by_kind<F>(&mut self, kind: EntityKind, mut f: F) 
+    where
+        F: FnMut(&mut Entity),
+    {
+        for entity in &mut self.entities {
+            if matches!(&entity.kind, k if k == &kind) {
+                f(entity);
+            }
+        }
+    }
+}
 
 pub const EMPTY: &'static str = "src/bin/resources/empty.png";
 

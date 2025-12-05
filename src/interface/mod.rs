@@ -5,6 +5,7 @@
 //! and create configured instances of the game engine.
 //!
 //! These functions support workflow from asset loading to scene setup to engine initialization.
+use crate::engine::scene::game_object::components::{Component, ComponentType};
 
 pub const EMPTY: &'static str = "src/bin/resources/empty.png";
 
@@ -53,7 +54,7 @@ pub fn create_gameobj_vec(objs: &[ObjectWithImage]) -> Vec<GameObject> {
     let mut res = Vec::new();
     let mut z_coord = 1;
     for obj in objs {
-        res.push(GameObject::new(
+        let gameobj = GameObject::new(
             vec![Box::new(Sprite::new(
                 Some(ImageReader::open(obj.image_path).unwrap().decode().unwrap()),
                 obj.has_shadow,
@@ -66,7 +67,8 @@ pub fn create_gameobj_vec(objs: &[ObjectWithImage]) -> Vec<GameObject> {
                 z: z_coord,
                 is_relative: false,
             },
-        ));
+        );
+        res.push(gameobj);
         z_coord += 1;
     }
     res
