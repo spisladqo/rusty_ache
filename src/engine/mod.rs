@@ -279,7 +279,7 @@ impl Engine for GameEngine {
                         .unwrap()
                         .set_background(new_background.clone());
                     let empty_object = create_obj_with_img(EMPTY, 0, 0, false);
-                    let scene = init_scene(&[], empty_object);
+                    let (scene, _a) = init_scene(&[], empty_object);
                     let timeout_ms = renderer.read().unwrap().scene_manager.end_scene.timeout_ms;
                     renderer.write().unwrap().scene_manager =
                         SceneManager::new(scene, EndScene::new(new_background.clone(), timeout_ms));

@@ -10,6 +10,8 @@ use crate::engine::scene::game_object::Position;
 use crate::engine::scene::game_object::components::Component;
 use crate::engine::scene::game_object::{GameObject, Object};
 use std::collections::{HashMap, HashSet};
+use std::ptr;
+
 
 /// Factory struct for creating game objects with unique IDs.
 ///
@@ -304,6 +306,15 @@ impl GameObjectManager {
 
     pub fn remove_game_object(&mut self, uid: usize) {
         self.game_objects.remove(&uid);
+    }
+
+    pub fn get_game_object_uid(&self, game_object: &GameObject) -> Option<usize> {
+        for (id, obj) in &self.game_objects {
+            if obj.position == game_object.position {
+                return Some(*id);
+            }
+        }
+        None
     }
 }
 

@@ -105,9 +105,10 @@ pub fn create_obj_with_img(image_path: &str, x: i32, y: i32, has_shadow: bool) -
 ///
 /// # Returns
 /// A full `Scene` instance initialized and ready for rendering.
-pub fn init_scene(objs: &[ObjectWithImage], main_obj: ObjectWithImage) -> Scene {
+pub fn init_scene(objs: &[ObjectWithImage], main_obj: ObjectWithImage) -> (Scene, Vec<GameObject>) {
     let game_objs = create_gameobj_vec(objs);
-    Scene::new(
+    let game_objs_clone = game_objs.clone();
+    (Scene::new(
         game_objs,
         vec![Box::new(Sprite::new(
             Some(
@@ -125,7 +126,7 @@ pub fn init_scene(objs: &[ObjectWithImage], main_obj: ObjectWithImage) -> Scene 
             z: 0,
             is_relative: false,
         },
-    )
+    ), game_objs_clone)
 }
 
 /// Creates and initializes a `GameEngine` instance using the given scene and resolution.

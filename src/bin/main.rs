@@ -70,10 +70,16 @@ fn main() {
 
     // let hermit_house_obj = create_obj_with_img("src/bin/resources/junk_house.png", 400, 240, true);
 
-    let scene = init_scene(
+    let (mut scene, game_objs) = init_scene(
         tiles_slice,
         main_ship_obj,
     );
+
+    for obj in game_objs {
+        let id = (if let Some(uid) = scene.get_game_object_uid(obj) {uid} else { continue; }) ;
+        println!("{}", id);
+        scene.delete_game_object_by_uid(id);
+    }
 
     let end_scene = init_end_scene("src/bin/resources/game_over.jpg", None);
     let mut engine = init_engine(scene, end_scene, WIDTH, HEIGHT);

@@ -9,7 +9,7 @@
 ///
 /// - `x`, `y`, `z`: Coordinates in the game world's 3D space.
 /// - `is_relative`: Flag indicating if the position is relative (true) or absolute (false).
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Position {
     pub x: i32,
     pub y: i32,

@@ -111,6 +111,13 @@ impl Scene {
         self.manager.remove_game_object(uid);
         self.init()
     }
+
+    pub fn get_game_object_uid(
+        &mut self,
+        obj: GameObject
+    ) -> Option<usize> {
+        return self.manager.get_game_object_uid(&obj);
+    }
 }
 
 #[cfg(test)]
