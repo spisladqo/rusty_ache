@@ -5,9 +5,7 @@ use rusty_ache::engine::scene::game_object::position::Position;
 use rusty_ache::interface::{ObjectWithImage, create_obj_with_img, init_end_scene, init_engine, init_scene};
 use rusty_ache::screen::{HEIGHT, WIDTH};
 
-const tile_width: i32 = 93;
-const tile_height: i32 = 57;
-const size: i32 = 2;
+use rusty_ache::interface::{tile_width, tile_height, size, main_char_width, main_char_height};
 
 fn create_tile_objs(layer_num: i32, layer_gap_px: i32) -> Vec<ObjectWithImage<'static>> {
     let mut tile_objs = Vec::new();
@@ -15,6 +13,8 @@ fn create_tile_objs(layer_num: i32, layer_gap_px: i32) -> Vec<ObjectWithImage<'s
     // Calculate center of screen
     let center_x: i32 = (WIDTH as i32) / 2 - (tile_width as i32)/ 2;
     let center_y: i32 = -(HEIGHT as i32) / 2 + (tile_height as i32) / 2;
+    // let center_x = 0;
+    // let center_y = 0;
 
     for layer in 0..layer_num {
         // Calculate vertical offset for this layer
@@ -63,7 +63,7 @@ fn main() {
     // let skyscraper_obj = create_obj_with_img("src/bin/resources/skyscraper.png", 150, 55, true);
     // let cabin_obj = create_obj_with_img("src/bin/resources/cabin.png", 280, -60, true);
     // CHANGE
-    let main_ship_obj = create_obj_with_img("src/bin/resources/white_ship.png", 0, 50, true);
+    let main_ship_obj = create_obj_with_img("src/bin/resources/white_ship.png", 0, 0, true);
 
     let tiles_vec = create_tile_objs(1, 600);
     let tiles_slice : &[ObjectWithImage] = &tiles_vec;
@@ -75,26 +75,28 @@ fn main() {
         main_ship_obj,
     );
 
-    for obj in game_objs {
-        let id = (if let Some(uid) = scene.get_game_object_uid(obj) {uid} else { continue; }) ;
-        println!("{}", id);
-        scene.delete_game_object_by_uid(id);
-    }
+    // for obj in game_objs {
+        // let id = (if let Some(uid) = scene.get_game_object_uid(obj) {uid} else { continue; }) ; // collision is danger
+        // println!("{}", id);
+    // }
 
-    let end_scene = init_end_scene("src/bin/resources/game_over.jpg", None);
+    let end_scene = init_end_scene("src/bin/resources/you_died.jpg", None);
     let mut engine = init_engine(scene, end_scene, WIDTH, HEIGHT);
 
     let main_pos_arc = engine.main_pos.clone();
     let end_scene_flag = engine.is_end_scene_active.clone();
-    std::thread::spawn(move || {
-        loop {
-            let (x, y) = *main_pos_arc.read().unwrap();
-            // println!("position of main object is ({}, {})", x, y);
-            if x > 150 {
-                end_scene_flag.store(true, std::sync::atomic::Ordering::SeqCst);
-            }
-        }
-    });
+    // std::thread::spawn(move || {
+    //     loop {
+    //         let (x, y) = *main_pos_arc.read().unwrap();
+    //         if y < -100 {
+    //             end_scene_flag.store(true, std::sync::atomic::Ordering::SeqCst);
+    //             break; // Optional: stop monitoring after triggering
+    //         }
+            
+    //         // ✅ Add sleep to prevent busy-waiting
+    //         // std::thread::sleep(std::time::Duration::from_millis(16)); // ~60 checks per second
+    //     }
+    // });
 
     engine.render().unwrap();
     engine.run().unwrap()

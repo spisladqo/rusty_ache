@@ -261,6 +261,20 @@ impl Engine for GameEngine {
             .background
             .clone();
 
+        let main_pos_arc1 = self.main_pos.clone();
+        let end_scene_flag = self.is_end_scene_active.clone();
+        std::thread::spawn(move || {
+            loop {
+                let (x, y) = *main_pos_arc1.read().unwrap();
+                if y > 100 {
+                    end_scene_flag.store(true, std::sync::atomic::Ordering::SeqCst);
+                    break;
+                }
+
+                std::thread::sleep(std::time::Duration::from_millis(16)); // ~60 checks per second
+            }
+        });
+
         thread::spawn(move || {
             let window_arc: Arc<Window> = loop {
                 if let Some(arc) = shared_window_clone.read().unwrap().clone() {
@@ -279,7 +293,7 @@ impl Engine for GameEngine {
                         .unwrap()
                         .set_background(new_background.clone());
                     let empty_object = create_obj_with_img(EMPTY, 0, 0, false);
-                    let (scene, _a) = init_scene(&[], empty_object);
+                    let (scene, mut game_objs) = init_scene(&[], empty_object);
                     let timeout_ms = renderer.read().unwrap().scene_manager.end_scene.timeout_ms;
                     renderer.write().unwrap().scene_manager =
                         SceneManager::new(scene, EndScene::new(new_background.clone(), timeout_ms));
@@ -337,6 +351,7 @@ impl Engine for GameEngine {
                 let (dx_script, dy_script) = main_obj_script();
                 let vector_move = (dx_keys + dx_script, dy_keys + dy_script);
 
+                //
                 renderer
                     .write()
                     .unwrap()
@@ -345,17 +360,30 @@ impl Engine for GameEngine {
                     .main_object
                     .add_position((vector_move.0, vector_move.1));
 
-                {
-                    let pos = renderer
-                        .read()
-                        .unwrap()
-                        .scene_manager
-                        .active_scene
-                        .main_object
-                        .position;
+                let objs = renderer.write().unwrap().scene_manager.active_scene.get_game_objects();
 
-                    *main_pos_arc.write().unwrap() = (pos.x, pos.y);
+                let mut count = 0;
+                for (id, obj) in objs {
+                    count += 1;
+                    obj.po
+                    // renderer.write().unwrap().scene_manager.active_scene.delete_game_object_by_uid(id); // works
                 }
+                // println!("found {} objects", count);
+
+
+                {
+                    // let pos = renderer
+                    //     .read()
+                    //     .unwrap()
+                    //     .scene_manager
+                    //     .active_scene
+                    //     .main_object
+                    //     .position;
+
+                    // *main_pos_arc.write().unwrap() = (pos.x, pos.y);
+                }
+                //
+
 
                 renderer.write().unwrap().render();
 

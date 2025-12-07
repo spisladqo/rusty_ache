@@ -316,6 +316,10 @@ impl GameObjectManager {
         }
         None
     }
+
+    pub fn get_game_objects(&self) -> HashMap<usize, GameObject> {
+        return self.game_objects.clone();
+    }
 }
 
 #[cfg(test)]

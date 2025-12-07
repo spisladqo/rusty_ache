@@ -16,8 +16,9 @@ use crate::screen::{HEIGHT, WIDTH};
 use super::utils::make_init_frame;
 
 /// Default RGBA color for the background fill.
-// pub const DEFAULT_BACKGROUND_COLOR: (u8, u8, u8, u8) = (98, 96, 96, 255);
-pub const DEFAULT_BACKGROUND_COLOR: (u8, u8, u8, u8) = (0, 0, 0, 255);
+// pub const DEFAULT_BACKGROUND_COLOR: (u8, u8, u8, u8) = (98, 96, 96, 255); // idk gray
+// pub const DEFAULT_BACKGROUND_COLOR: (u8, u8, u8, u8) = (0, 0, 0, 255); // black
+pub const DEFAULT_BACKGROUND_COLOR: (u8, u8, u8, u8) = (173, 216, 230, 255);
 
 /// Offset used when rendering shadows relative to the sprite.
 pub const OFFSET: (i32, i32) = (10, -10);

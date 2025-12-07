@@ -22,7 +22,7 @@ use winit::event_loop::{ActiveEventLoop, ControlFlow, EventLoop};
 use winit::keyboard::{KeyCode, PhysicalKey};
 use winit::window::{Window, WindowAttributes, WindowId};
 
-/// Screen dimensions constants.
+/// Screen dimensions constants. HAS COPY
 pub const WIDTH: u32 = 400;
 pub const HEIGHT: u32 = 400;
 

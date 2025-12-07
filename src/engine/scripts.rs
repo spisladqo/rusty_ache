@@ -14,7 +14,7 @@ pub fn main_obj_script() -> (i32, i32) {
     // so in this funciton you can write custom main object script
 
     const COOLDOWN: Duration = Duration::from_secs(3);
-    const JUMP_DURATION: Duration = Duration::from_millis(200);
+    const JUMP_DURATION: Duration = Duration::from_millis(2000);
 
     let state = STATE.get_or_init(|| {
         Mutex::new(ScriptState {

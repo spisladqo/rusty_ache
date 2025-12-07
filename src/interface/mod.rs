@@ -5,6 +5,18 @@
 //! and create configured instances of the game engine.
 //!
 //! These functions support workflow from asset loading to scene setup to engine initialization.
+//! 
+
+/// Screen dimensions constants. COPIED
+pub const WIDTH: u32 = 400;
+pub const HEIGHT: u32 = 400;
+
+pub const tile_width: i32 = 93;
+pub const tile_height: i32 = 57;
+pub const size: i32 = 3;
+pub const main_char_width: i32 = 76;
+pub const main_char_height: i32 = 46;
+
 use crate::engine::scene::game_object::components::{Component, ComponentType};
 
 pub const EMPTY: &'static str = "src/bin/resources/empty.png";
@@ -118,7 +130,10 @@ pub fn init_scene(objs: &[ObjectWithImage], main_obj: ObjectWithImage) -> (Scene
                     .unwrap(),
             ),
             true,
-            (360/2 - 76/2, -360/2 + 46/2),   // CHANGE
+            // CHANGE this centers white_ship at the center of the screen, because x and y start from topleft corner
+            (((WIDTH as i32) / 2 - (main_char_width as i32)/ 2), (-(HEIGHT as i32) / 2 + (main_char_height as i32) / 2)),
+            // (360/2 - 76/2, -360/2 + 46/2),
+            // (0, 0),
         ))],
         Position {
             x: main_obj.x,

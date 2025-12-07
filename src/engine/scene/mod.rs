@@ -12,6 +12,7 @@ use crate::engine::scene::game_object::components::{Component, ComponentType};
 use crate::engine::scene::game_object::{GameObject, Position};
 use crate::engine::scene::object_manager::GameObjectManager;
 use image::DynamicImage;
+use std::collections::HashMap;
 
 pub mod game_object;
 
@@ -21,12 +22,15 @@ mod object_manager;
 #[derive(Clone)]
 pub struct Scene {
     /// Manager responsible for storing and controlling multiple game objects.
-    manager: GameObjectManager,
+    pub manager: GameObjectManager,
     /// The main game object within this scene.
     pub main_object: GameObject,
 }
 
 impl Scene {
+    pub fn get_game_objects(&self) -> HashMap<usize, GameObject> {
+        return self.manager.get_game_objects();
+    }
     /// Creates a new `Scene` instance with provided game objects, main object's components, and position.
     ///
     /// # Parameters
