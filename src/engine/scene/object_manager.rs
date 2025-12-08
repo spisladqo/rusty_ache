@@ -8,7 +8,7 @@
 
 use crate::engine::scene::game_object::Position;
 use crate::engine::scene::game_object::components::Component;
-use crate::engine::scene::game_object::{GameObject, Object};
+use crate::engine::scene::game_object::{GameObject, Object, ObjectKind};
 use std::collections::{HashMap, HashSet};
 use std::ptr;
 
@@ -64,12 +64,12 @@ impl GameObjectFactory {
         } else if !self.uids.is_empty() {
             let uid = *self.uids.iter().next().unwrap();
             self.uids.remove(&uid);
-            return (uid, GameObject::new(components, None, position));
+            return (uid, GameObject::new(components, None, position, ObjectKind::Enemy));
         }
         self.allocated_objects += 1;
         (
             self.allocated_objects,
-            GameObject::new(components, None, position),
+            GameObject::new(components, None, position, ObjectKind::Enemy),
         )
     }
 }

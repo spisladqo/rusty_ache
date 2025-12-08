@@ -1,9 +1,11 @@
 use rusty_ache::engine::Engine;
-use rusty_ache::engine::scene::game_object::GameObject;
+use rusty_ache::engine::scene::game_object::{GameObject, ObjectKind};
 use rusty_ache::engine::scene::game_object::components::script::Script;
 use rusty_ache::engine::scene::game_object::position::Position;
 use rusty_ache::interface::{ObjectWithImage, create_obj_with_img, init_end_scene, init_engine, init_scene};
 use rusty_ache::screen::{HEIGHT, WIDTH};
+use rusty_ache::engine::scene_manager::{SceneManager};
+
 
 use rusty_ache::interface::{tile_width, tile_height, size, main_char_width, main_char_height};
 
@@ -46,7 +48,7 @@ fn create_tile_objs(layer_num: i32, layer_gap_px: i32) -> Vec<ObjectWithImage<'s
 
                 println!("Layer {}: position of tile object is ({}, {})", layer, x, y);
 
-                let tile_obj = create_obj_with_img("src/bin/resources/tile3.png", x, y, false);
+                let tile_obj = create_obj_with_img("src/bin/resources/tile3.png", x, y, false, ObjectKind::Tile);
                 tile_objs.push(tile_obj);
             }
         }
@@ -63,7 +65,7 @@ fn main() {
     // let skyscraper_obj = create_obj_with_img("src/bin/resources/skyscraper.png", 150, 55, true);
     // let cabin_obj = create_obj_with_img("src/bin/resources/cabin.png", 280, -60, true);
     // CHANGE
-    let main_ship_obj = create_obj_with_img("src/bin/resources/white_ship.png", 0, 0, true);
+    let main_ship_obj = create_obj_with_img("src/bin/resources/white_ship.png", 0, 0, true, ObjectKind::Player);
 
     let tiles_vec = create_tile_objs(1, 600);
     let tiles_slice : &[ObjectWithImage] = &tiles_vec;
@@ -85,18 +87,19 @@ fn main() {
 
     let main_pos_arc = engine.main_pos.clone();
     let end_scene_flag = engine.is_end_scene_active.clone();
-    // std::thread::spawn(move || {
-    //     loop {
-    //         let (x, y) = *main_pos_arc.read().unwrap();
-    //         if y < -100 {
-    //             end_scene_flag.store(true, std::sync::atomic::Ordering::SeqCst);
-    //             break; // Optional: stop monitoring after triggering
-    //         }
+    std::thread::spawn(move || {
+        loop {
+            let (x, y) = *main_pos_arc.read().unwrap();
+            println!("main obj pos: {} {}", x, y);
+            if y < -100 {
+                end_scene_flag.store(true, std::sync::atomic::Ordering::SeqCst);
+                break; // Optional: stop monitoring after triggering
+            }
             
-    //         // ✅ Add sleep to prevent busy-waiting
-    //         // std::thread::sleep(std::time::Duration::from_millis(16)); // ~60 checks per second
-    //     }
-    // });
+            // ✅ Add sleep to prevent busy-waiting
+            // std::thread::sleep(std::time::Duration::from_millis(16)); // ~60 checks per second
+        }
+    });
 
     engine.render().unwrap();
     engine.run().unwrap()

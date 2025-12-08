@@ -15,6 +15,15 @@ pub(crate) use crate::engine::scene::game_object::position::Position;
 pub mod components;
 pub mod position;
 
+
+#[derive(Clone, PartialEq)]
+pub enum ObjectKind {
+    Player,
+    Tile,
+    TileFalling,
+    Enemy,
+}
+
 /// Errors that can arise at the GameObject level.
 pub enum GameObjectError {
     /// Represents an error originating from a component operation.
@@ -37,6 +46,7 @@ pub trait Object {
         components: Vec<Box<dyn Component + Send + Sync>>,
         script: Option<Box<dyn Script + Send + Sync>>,
         position: Position,
+        kind: ObjectKind,
     ) -> Self;
 
     fn add_component(
@@ -52,6 +62,10 @@ pub trait Object {
 
     fn add_position(&mut self, vec: (i32, i32));
 
+    fn get_kind(&self) -> Result<&ObjectKind, GameObjectError>;
+
+    fn update_kind(&mut self, kind: ObjectKind) -> Result<(), GameObjectError>;
+
     fn run_action(&self);
 }
 
@@ -62,6 +76,7 @@ pub struct GameObject {
     pub components: Vec<Box<dyn Component + Send + Sync>>,
     pub script: Option<Box<dyn Script + Send + Sync>>,
     pub position: Position,
+    pub kind: ObjectKind,
 }
 
 impl Object for GameObject {
@@ -71,6 +86,7 @@ impl Object for GameObject {
         components: Vec<Box<dyn Component + Send + Sync>>,
         script: Option<Box<dyn Script + Send + Sync>>,
         position: Position,
+        kind: ObjectKind,
     ) -> Self {
         for component in &components {
             if component.get_component_type() == ComponentType::Sprite {
@@ -81,6 +97,7 @@ impl Object for GameObject {
             components,
             script,
             position,
+            kind,
         }
     }
 
@@ -129,6 +146,15 @@ impl Object for GameObject {
         self.position.y += vec.1;
     }
 
+    fn get_kind(&self) -> Result<&ObjectKind, GameObjectError> {
+        Ok(&self.kind)
+    }
+
+    fn update_kind(&mut self, kind: ObjectKind) -> Result<(), GameObjectError> {
+        self.kind = kind;
+        Ok(())
+    }
+
     /// Runs the associated script action on the game object.
     ///
     /// Currently a stub; should be implemented to invoke `script.action`.
@@ -162,7 +188,7 @@ mod tests {
         };
         let components: Vec<Box<dyn Component + Send + Sync>> =
             vec![Box::new(Sprite::new(None, false, (0, 0)))];
-        GameObject::new(components, None, position)
+        GameObject::new(components, None, position, ObjectKind::Tile)
     }
 
     #[test]
@@ -176,7 +202,7 @@ mod tests {
         let components: Vec<Box<dyn Component + Send + Sync>> =
             vec![Box::new(Sprite::new(None, false, (0, 0)))];
 
-        let game_object = GameObject::new(components, None, position);
+        let game_object = GameObject::new(components, None, position, ObjectKind::Enemy);
 
         assert_eq!(game_object.components.len(), 1);
         assert_eq!(game_object.position.x, 10);
@@ -231,7 +257,7 @@ mod tests {
             z: 35,
             is_relative: false,
         };
-        let game_object = GameObject::new(vec![], None, position);
+        let game_object = GameObject::new(vec![], None, position, ObjectKind::Enemy);
 
         let result = game_object.get_position();
 
@@ -269,7 +295,7 @@ mod tests {
             z: 0,
             is_relative: true,
         };
-        let game_object = GameObject::new(vec![], None, position);
+        let game_object = GameObject::new(vec![], None, position, ObjectKind::Tile);
 
         assert_eq!(game_object.components.len(), 0);
     }

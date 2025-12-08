@@ -13,11 +13,11 @@ pub const HEIGHT: u32 = 400;
 
 pub const tile_width: i32 = 93;
 pub const tile_height: i32 = 57;
-pub const size: i32 = 3;
+pub const size: i32 = 6;
 pub const main_char_width: i32 = 76;
 pub const main_char_height: i32 = 46;
 
-use crate::engine::scene::game_object::components::{Component, ComponentType};
+use crate::engine::scene::game_object::{ObjectKind, components::{Component, ComponentType}};
 
 pub const EMPTY: &'static str = "src/bin/resources/empty.png";
 
@@ -50,6 +50,8 @@ pub struct ObjectWithImage<'a> {
     y: i32,
     /// Whether the sprite should cast a shadow.
     has_shadow: bool,
+    /// Object kind
+    kind: ObjectKind,
 }
 
 /// Converts a slice of `ObjectWithImage` entries into a vector of fully constructed `GameObject`s.
@@ -79,6 +81,7 @@ pub fn create_gameobj_vec(objs: &[ObjectWithImage]) -> Vec<GameObject> {
                 z: z_coord,
                 is_relative: false,
             },
+            obj.kind.clone(),
         );
         res.push(gameobj);
         z_coord += 1;
@@ -97,12 +100,13 @@ pub fn create_gameobj_vec(objs: &[ObjectWithImage]) -> Vec<GameObject> {
 ///
 /// # Returns
 /// A new `ObjectWithImage` instance.
-pub fn create_obj_with_img(image_path: &str, x: i32, y: i32, has_shadow: bool) -> ObjectWithImage {
+pub fn create_obj_with_img(image_path: &str, x: i32, y: i32, has_shadow: bool, kind: ObjectKind) -> ObjectWithImage {
     ObjectWithImage {
         image_path,
         x,
         y,
         has_shadow,
+        kind
     }
 }
 
@@ -174,7 +178,7 @@ mod tests {
 
     #[test]
     fn test_create_obj_with_img() {
-        let obj = create_obj_with_img("./image", 100, 100, true);
+        let obj = create_obj_with_img("./image", 100, 100, true, ObjectKind::Enemy);
         assert_eq!(obj.image_path, "./image");
         assert_eq!(obj.x, 100);
         assert_eq!(obj.y, 100);
@@ -188,6 +192,7 @@ mod tests {
             200,
             200,
             false,
+            ObjectKind::Enemy
         )];
         let owi = create_gameobj_vec(&objs);
         assert_eq!(owi.len(), objs.len());
@@ -202,12 +207,13 @@ mod tests {
             200,
             200,
             false,
+            ObjectKind::Enemy
         )];
-        let main_obj = create_obj_with_img("./resources/perf_diag.png", 300, 300, true);
+        let main_obj = create_obj_with_img("./resources/perf_diag.png", 300, 300, true, ObjectKind::Player);
         let main_obj_x = main_obj.x;
         let main_obj_y = main_obj.y;
         let scene = init_scene(&objs, main_obj);
-        assert_eq!(scene.main_object.position.x, main_obj_x);
-        assert_eq!(scene.main_object.position.y, main_obj_y);
+        assert_eq!(scene.0.main_object.position.x, main_obj_x);
+        assert_eq!(scene.0.main_object.position.y, main_obj_y);
     }
 }

@@ -13,13 +13,16 @@ pub mod scene;
 pub mod scene_manager;
 pub mod scripts;
 
+const TICKS_FOR_DELETION: u32 = 60;
+
 use crate::Resolution;
 use crate::engine::config::Config;
 use crate::engine::scene::Scene;
-use crate::engine::scene::game_object::{Object, GameObject};
-use crate::interface::ObjectWithImage;
+use crate::engine::scene::game_object::{Object, GameObject, ObjectKind};
+use crate::interface::{ObjectWithImage, main_char_height, main_char_width, tile_height, tile_width};
 use crate::engine::scene_manager::{EndScene, SceneManager};
 use crate::engine::scripts::main_obj_script;
+use crate::engine::scene::game_object::position::Position;
 use crate::interface::{create_obj_with_img, init_scene};
 use crate::interface::create_gameobj_vec;
 use crate::render::renderer::{DEFAULT_BACKGROUND_COLOR, Renderer};
@@ -33,116 +36,6 @@ use std::time::{Duration, Instant};
 use std::{thread, vec};
 use winit::event_loop::{ControlFlow, EventLoop};
 use winit::window::Window;
-
-#[derive(Clone, PartialEq)]
-pub enum EntityKind {
-    Player,
-    Tile,
-    TileFalling,
-    TileDestroyed,
-}
-
-#[derive(Clone)]
-pub struct Entity {
-    id: i32,
-    obj: GameObject,
-    kind: EntityKind,
-}
-
-// Entity Manager Structure
-pub struct EntityManager {
-    entities: Vec<Entity>,
-    next_id: i32,
-}
-
-impl EntityManager {
-    pub fn new() -> Self {
-        EntityManager {
-            entities: Vec::new(),
-            next_id: 1, // Start IDs from 1
-        }
-    }
-    
-    pub fn add_entity(&mut self, mut entity: Entity) -> i32 {
-        entity.id = self.next_id;
-        let id = entity.id;
-        self.entities.push(entity);
-        self.next_id += 1;
-        id
-    }
-    
-    pub fn add_entities(&mut self, new_entities: Vec<Entity>) -> Vec<i32> {
-        let mut ids = Vec::new();
-        for entity in new_entities {
-            ids.push(self.add_entity(entity));
-        }
-        ids
-    }
-
-    pub fn get_entities(&self) -> &[Entity] {
-        &self.entities
-    }
-
-    pub fn get_entities_mut(&mut self) -> &mut [Entity] {
-        &mut self.entities
-    }
-    
-    pub fn get_entity(&self, id: i32) -> Option<&Entity> {
-        self.entities.iter().find(|e| e.id == id)
-    }
-
-    pub fn get_entity_mut(&mut self, id: i32) -> Option<&mut Entity> {
-        self.entities.iter_mut().find(|e| e.id == id)
-    }
-        pub fn remove_entity(&mut self, id: i32) -> Option<Entity> {
-        if let Some(pos) = self.entities.iter().position(|e| e.id == id) {
-            Some(self.entities.remove(pos))
-        } else {
-            None
-        }
-    }
-    
-    pub fn clear(&mut self) {
-        self.entities.clear();
-    }
-    
-    pub fn count(&self) -> usize {
-        self.entities.len()
-    }
-    
-    pub fn get_entities_by_kind(&self, kind: EntityKind) -> Vec<&Entity> {
-        self.entities.iter()
-            .filter(|e| matches!(&e.kind, k if k == &kind))
-            .collect()
-    }
-    
-    pub fn get_entities_by_kind_mut(&mut self, kind: EntityKind) -> Vec<&mut Entity> {
-        self.entities.iter_mut()
-            .filter(|e| matches!(&e.kind, k if k == &kind))
-            .collect()
-    }
-    
-    // Batch operations
-    pub fn update_all<F>(&mut self, mut f: F) 
-    where
-        F: FnMut(&mut Entity),
-    {
-        for entity in &mut self.entities {
-            f(entity);
-        }
-    }
-    
-    pub fn update_by_kind<F>(&mut self, kind: EntityKind, mut f: F) 
-    where
-        F: FnMut(&mut Entity),
-    {
-        for entity in &mut self.entities {
-            if matches!(&entity.kind, k if k == &kind) {
-                f(entity);
-            }
-        }
-    }
-}
 
 pub const EMPTY: &'static str = "src/bin/resources/empty.png";
 
@@ -172,7 +65,7 @@ pub trait Engine {
 /// runs the main event loop and coordinates rendering.
 pub struct GameEngine {
     //config: Box<dyn Config + Send>,
-    render: Arc<RwLock<Renderer>>,
+    pub render: Arc<RwLock<Renderer>>,
     pub main_pos: Arc<RwLock<(i32, i32)>>,
     pub is_end_scene_active: Arc<AtomicBool>,
 }
@@ -261,19 +154,21 @@ impl Engine for GameEngine {
             .background
             .clone();
 
+        let mut pending_deletions: Vec<(usize, u32)> = Vec::new();
+
         let main_pos_arc1 = self.main_pos.clone();
         let end_scene_flag = self.is_end_scene_active.clone();
-        std::thread::spawn(move || {
-            loop {
-                let (x, y) = *main_pos_arc1.read().unwrap();
-                if y > 100 {
-                    end_scene_flag.store(true, std::sync::atomic::Ordering::SeqCst);
-                    break;
-                }
+        // std::thread::spawn(move || {
+        //     loop {
+        //         let (x, y) = *main_pos_arc1.read().unwrap();
+        //         if y < -100 {
+        //             end_scene_flag.store(true, std::sync::atomic::Ordering::SeqCst);
+        //             break;
+        //         }
 
-                std::thread::sleep(std::time::Duration::from_millis(16)); // ~60 checks per second
-            }
-        });
+        //         std::thread::sleep(std::time::Duration::from_millis(16)); // ~60 checks per second
+        //     }
+        // });
 
         thread::spawn(move || {
             let window_arc: Arc<Window> = loop {
@@ -282,6 +177,8 @@ impl Engine for GameEngine {
                 }
                 thread::sleep(Duration::from_millis(50));
             };
+
+            thread::sleep(Duration::from_secs(3));
 
             //dbg!("Producer has started");
 
@@ -292,7 +189,7 @@ impl Engine for GameEngine {
                         .write()
                         .unwrap()
                         .set_background(new_background.clone());
-                    let empty_object = create_obj_with_img(EMPTY, 0, 0, false);
+                    let empty_object = create_obj_with_img(EMPTY, 0, 0, false, ObjectKind::Enemy);
                     let (scene, mut game_objs) = init_scene(&[], empty_object);
                     let timeout_ms = renderer.read().unwrap().scene_manager.end_scene.timeout_ms;
                     renderer.write().unwrap().scene_manager =
@@ -343,10 +240,14 @@ impl Engine for GameEngine {
                     Some(KeyCode::KeyD) => (1, 0),
                     _ => (0, 0),
                 };*/
-                let dx_keys = (keys_pressed_clone.d.load(Ordering::Relaxed) as i32)
+                let mut dx_keys = (keys_pressed_clone.d.load(Ordering::Relaxed) as i32)
                     - (keys_pressed_clone.a.load(Ordering::Relaxed) as i32);
-                let dy_keys = (keys_pressed_clone.w.load(Ordering::Relaxed) as i32)
-                    - (keys_pressed_clone.s.load(Ordering::Relaxed) as i32);
+                let mut dy_keys = (keys_pressed_clone.w.load(Ordering::Relaxed) as i32)
+                    - (keys_pressed_clone.s.load(Ordering::Relaxed) as i32) * 3;
+
+                // let coef = 3;
+                // dx_keys *= coef;
+                // dy_keys *= coef;
 
                 let (dx_script, dy_script) = main_obj_script();
                 let vector_move = (dx_keys + dx_script, dy_keys + dy_script);
@@ -360,27 +261,96 @@ impl Engine for GameEngine {
                     .main_object
                     .add_position((vector_move.0, vector_move.1));
 
-                let objs = renderer.write().unwrap().scene_manager.active_scene.get_game_objects();
+                let objs1 = renderer.write().unwrap().scene_manager.active_scene.get_game_objects();
+                let objs2 = objs1.clone();
+
+                let main_pos = match renderer.write()
+                    .unwrap()
+                    .scene_manager
+                    .active_scene
+                    .main_object
+                    .get_position()
+                    .map(|pos| pos.clone()) {  // Clone if needed
+                        Ok(pos) => pos,
+                        _ => continue,
+                    };
+
+                let main_poss = Position {
+                    x: main_pos.x + (WIDTH as i32) / 2 - (main_char_width as i32)/ 2,
+                    y: main_pos.y + -(HEIGHT as i32) / 2 + (main_char_height as i32) / 2,
+                    z: main_pos.z,
+                    is_relative: false,
+                };
+
+
+                let mut have_touched = false;
+                for (id, obj) in &objs1 {
+                    let other_pos = obj.position;
+                    if check_intersect(main_poss.x, main_poss.y, main_char_width, main_char_height,
+                                        other_pos.x, other_pos.y, tile_width, tile_height) {
+                        // println!("main obj and {}", id);
+                        pending_deletions.push((*id, 0));
+                        have_touched = true;
+                    }
+                }
+
+                if (!have_touched) {
+                    let vector_move = (0, -300);
+
+                    //
+                    renderer
+                        .write()
+                        .unwrap()
+                        .scene_manager
+                        .active_scene
+                        .main_object
+                        .add_position((vector_move.0, vector_move.1));
+
+                }
+
+                // Update counters and delete when ready
+                pending_deletions.retain_mut(|(id, counter)| {
+                    *counter += 1;
+                    if *counter >= TICKS_FOR_DELETION {
+                        if let Ok(mut guard) = renderer.write() {
+                            guard.scene_manager.active_scene.delete_game_object_by_uid(*id);
+                        }
+                        false // Remove from list
+                    } else {
+                        true // Keep in list
+                    }
+                });
+
 
                 let mut count = 0;
-                for (id, obj) in objs {
-                    count += 1;
-                    obj.po
-                    // renderer.write().unwrap().scene_manager.active_scene.delete_game_object_by_uid(id); // works
+                for (id1, obj1) in &objs1 {
+
+                    // treat other objects
+                    for (id2, obj2) in &objs2 {
+                        if id1 == id2 { continue };
+                        let pos1 = obj1.position;
+                        let pos2 = obj2.position;
+
+                        if obj1.kind == ObjectKind::Player &&
+                            check_intersect(pos1.x, pos1.y, main_char_width, main_char_height,
+                                        pos2.x, pos2.y, tile_width, tile_height) {
+                            println!("{} and {}", id1, id2);
+                        }
+                    }
                 }
                 // println!("found {} objects", count);
 
 
                 {
-                    // let pos = renderer
-                    //     .read()
-                    //     .unwrap()
-                    //     .scene_manager
-                    //     .active_scene
-                    //     .main_object
-                    //     .position;
+                    let pos = renderer
+                        .read()
+                        .unwrap()
+                        .scene_manager
+                        .active_scene
+                        .main_object
+                        .position;
 
-                    // *main_pos_arc.write().unwrap() = (pos.x, pos.y);
+                    *main_pos_arc.write().unwrap() = (pos.x, pos.y);
                 }
                 //
 
@@ -412,6 +382,18 @@ impl Engine for GameEngine {
 
         Ok(())
     }
+}
+
+fn check_intersect(x1: i32, y1: i32, w1: i32, h1: i32, x2: i32, y2: i32, w2: i32, h2: i32) -> bool {
+    if x1 > (x2 + w2) || x2 > (x1 + w1) {
+        return false
+    }
+
+    if (y1 - h1) > y2 || (y2 - h2) > y1 {
+        return false
+    }
+    
+    return true
 }
 
 #[cfg(test)]

@@ -9,7 +9,7 @@
 
 use crate::engine::scene::game_object::Object;
 use crate::engine::scene::game_object::components::{Component, ComponentType};
-use crate::engine::scene::game_object::{GameObject, Position};
+use crate::engine::scene::game_object::{GameObject, Position, ObjectKind};
 use crate::engine::scene::object_manager::GameObjectManager;
 use image::DynamicImage;
 use std::collections::HashMap;
@@ -51,7 +51,7 @@ impl Scene {
         }
         Scene {
             manager: obj_manager,
-            main_object: GameObject::new(main_components, None, main_position),
+            main_object: GameObject::new(main_components, None, main_position, ObjectKind::Player),
         }
     }
 
