@@ -19,7 +19,7 @@ use crate::Resolution;
 use crate::engine::config::Config;
 use crate::engine::scene::Scene;
 use crate::engine::scene::game_object::{Object, GameObject, ObjectKind};
-use crate::interface::{ObjectWithImage, main_char_height, main_char_width, tile_height, tile_width};
+use crate::interface::{ObjectWithImage, death_y, main_char_height, main_char_width, tile_height, tile_width};
 use crate::engine::scene_manager::{EndScene, SceneManager};
 use crate::engine::scripts::main_obj_script;
 use crate::engine::scene::game_object::position::Position;
@@ -189,7 +189,7 @@ impl Engine for GameEngine {
                         .write()
                         .unwrap()
                         .set_background(new_background.clone());
-                    let empty_object = create_obj_with_img(EMPTY, 0, 0, false, ObjectKind::Enemy);
+                    let empty_object = create_obj_with_img(EMPTY, 0, 0, false, ObjectKind::Stub);
                     let (scene, mut game_objs) = init_scene(&[], empty_object);
                     let timeout_ms = renderer.read().unwrap().scene_manager.end_scene.timeout_ms;
                     renderer.write().unwrap().scene_manager =
@@ -243,11 +243,11 @@ impl Engine for GameEngine {
                 let mut dx_keys = (keys_pressed_clone.d.load(Ordering::Relaxed) as i32)
                     - (keys_pressed_clone.a.load(Ordering::Relaxed) as i32);
                 let mut dy_keys = (keys_pressed_clone.w.load(Ordering::Relaxed) as i32)
-                    - (keys_pressed_clone.s.load(Ordering::Relaxed) as i32) * 3;
+                    - (keys_pressed_clone.s.load(Ordering::Relaxed) as i32);
 
-                // let coef = 3;
-                // dx_keys *= coef;
-                // dy_keys *= coef;
+                let coef = 3;
+                dx_keys *= coef;
+                dy_keys *= coef;
 
                 let (dx_script, dy_script) = main_obj_script();
                 let vector_move = (dx_keys + dx_script, dy_keys + dy_script);
@@ -261,6 +261,121 @@ impl Engine for GameEngine {
                     .main_object
                     .add_position((vector_move.0, vector_move.1));
 
+                // let objs1 = renderer.write().unwrap().scene_manager.active_scene.get_game_objects();
+                // let objs2 = objs1.clone();
+
+                // let main_pos = match renderer.write()
+                //     .unwrap()
+                //     .scene_manager
+                //     .active_scene
+                //     .main_object
+                //     .get_position()
+                //     .map(|pos| pos.clone()) {  // Clone if needed
+                //         Ok(pos) => pos,
+                //         _ => continue,
+                //     };
+
+                // let main_poss = Position {
+                //     x: main_pos.x + (WIDTH as i32) / 2 - (main_char_width as i32)/ 2,
+                //     y: main_pos.y + -(HEIGHT as i32) / 2 + (main_char_height as i32) / 2,
+                //     z: main_pos.z,
+                //     is_relative: false,
+                // };
+
+                // let mut have_touched = false;
+                // for (id, obj) in &objs1 {
+                //     let other_pos = obj.position;
+                //     let kind = obj.get_kind();
+
+                //     if check_intersect(main_poss.x, main_poss.y, main_char_width, main_char_height,
+                //                         other_pos.x, other_pos.y, tile_width, tile_height) &&
+                //         *kind == ObjectKind::Tile {
+                //         // println!("main obj and {}", id);
+                //         pending_deletions.push((*id, 0));
+                //         have_touched = true;
+                //     }
+                // }
+
+                // if (!have_touched) {
+                //     let vector_move = (0, -600);
+
+                //     //
+                //     renderer
+                //         .write()
+                //         .unwrap()
+                //         .scene_manager
+                //         .active_scene
+                //         .main_object
+                //         .add_position((vector_move.0, vector_move.1));
+
+                // }
+
+                // // First, separate enemies from other objects
+                // let mut enemies_to_move = Vec::new();
+                // let mut tiles_to_check = Vec::new();
+
+                // // Classify objects
+                // for (id, obj) in &objs1 {
+                //     match obj.kind {
+                //         ObjectKind::Enemy => {
+                //             enemies_to_move.push((*id, obj.clone())); // Clone or store id + position
+                //         }
+                //         ObjectKind::Tile => {
+                //             // println!("found tile\n");
+                //             tiles_to_check.push((*id, obj.clone()));
+                //         }
+                //         _ => {}
+                //     }
+                // }
+
+                // // // Move each enemy (simple example: move down)
+                // // for (enemy_id, enemy_obj) in &enemies_to_move {
+                // //     // Simple movement logic - move down 5 pixels per frame
+                // //     let movement = (0, 5); // You can make this more sophisticated
+                    
+                // //     if let Ok(mut guard) = renderer.write() {
+                // //         // Check if you can iterate mutably
+                // //         for obj in guard.scene_manager.active_scene.game_objects.iter_mut() {
+                // //             if obj.uid == *enemy_id {
+                // //                 obj.add_position(movement);
+                // //                 break;
+                // //             }
+                // //         }
+                // //     }
+                // // }
+
+
+                // let mut count = 0;
+                // for (id1, obj1) in &objs1 {
+
+                //     // treat other objects
+                //     for (id2, obj2) in &objs2 {
+                //         if id1 == id2 { continue };
+                //         let pos1 = obj1.position;
+                //         let pos2 = obj2.position;
+
+                //         if obj1.kind == ObjectKind::Player &&
+                //             check_intersect(pos1.x, pos1.y, main_char_width, main_char_height,
+                //                         pos2.x, pos2.y, tile_width, tile_height) {
+                //             // println!("{} and {}", id1, id2);
+                //         }
+                //     }
+                // }
+
+                // // Update counters and delete when ready
+                // pending_deletions.retain_mut(|(id, counter)| {
+                //     *counter += 1;
+                //     if *counter >= TICKS_FOR_DELETION {
+                //         if let Ok(mut guard) = renderer.write() {
+                //             guard.scene_manager.active_scene.delete_game_object_by_uid(*id);
+                //         }
+                //         false // Remove from list
+                //     } else {
+                //         true // Keep in list
+                //     }
+                // });
+                // println!("found {} objects", count);
+
                 let objs1 = renderer.write().unwrap().scene_manager.active_scene.get_game_objects();
                 let objs2 = objs1.clone();
 
@@ -270,7 +385,7 @@ impl Engine for GameEngine {
                     .active_scene
                     .main_object
                     .get_position()
-                    .map(|pos| pos.clone()) {  // Clone if needed
+                    .map(|pos| pos.clone()) {
                         Ok(pos) => pos,
                         _ => continue,
                     };
@@ -282,22 +397,23 @@ impl Engine for GameEngine {
                     is_relative: false,
                 };
 
+                let mut have_touched_tile = false;
 
-                let mut have_touched = false;
+                // Проверка столкновений главного объекта с другими объектами
                 for (id, obj) in &objs1 {
                     let other_pos = obj.position;
+                    let kind = obj.get_kind();
+
                     if check_intersect(main_poss.x, main_poss.y, main_char_width, main_char_height,
-                                        other_pos.x, other_pos.y, tile_width, tile_height) {
-                        // println!("main obj and {}", id);
+                                    other_pos.x, other_pos.y, tile_width, tile_height) &&
+                        *kind == ObjectKind::Tile {
                         pending_deletions.push((*id, 0));
-                        have_touched = true;
+                        have_touched_tile = true;
                     }
                 }
 
-                if (!have_touched) {
-                    let vector_move = (0, -300);
-
-                    //
+                if (!have_touched_tile) {
+                    let vector_move = (0, -600);
                     renderer
                         .write()
                         .unwrap()
@@ -305,41 +421,82 @@ impl Engine for GameEngine {
                         .active_scene
                         .main_object
                         .add_position((vector_move.0, vector_move.1));
-
                 }
 
-                // Update counters and delete when ready
+                let mut num_enemies = 0;
+                // Обработка врагов - проверка касания с плитками и удаление если упали за пределы
+                for (enemy_id, enemy_obj) in objs1.iter()
+                    .filter(|(_, obj)| obj.get_kind() == &ObjectKind::Enemy) {
+                    num_enemies += 1;
+                    
+                    // Проверяем, не упал ли враг за пределы экрана (Y < -100)
+                    if enemy_obj.position.y < death_y {
+                        // Немедленно удаляем врага
+                        if let Ok(mut guard) = renderer.write() {
+                            guard.scene_manager.active_scene.delete_game_object_by_uid(*enemy_id);
+                        }
+                        continue; // Пропускаем остальную обработку для этого врага
+                    }
+                    
+                    let mut enemy_touching_tile = false;
+                    let enemy_pos = enemy_obj.position;
+                    let enemy_width = main_char_width; // Предполагаем, что враги такого же размера
+                    let enemy_height = main_char_height;
+                    
+                    // Проверяем, касается ли враг какой-либо плитки
+                    for (tile_id, tile_obj) in objs1.iter()
+                        .filter(|(_, obj)| obj.get_kind() == &ObjectKind::Tile) {
+                        
+                        let tile_pos = tile_obj.position;
+                        
+                        if check_intersect(
+                            enemy_pos.x, enemy_pos.y, enemy_width, enemy_height,
+                            tile_pos.x, tile_pos.y, tile_width, tile_height
+                        ) {
+                            enemy_touching_tile = true;
+                            
+                            // Добавляем плитку в список на удаление при касании врагом
+                            if !pending_deletions.iter().any(|(id, _)| *id == *tile_id) {
+                                pending_deletions.push((*tile_id, 0));
+                            }
+                            // break; // Враг касается хотя бы одной плитки
+                        }
+                    }
+                    
+                    // Если враг не касается плитки - заставляем его падать
+                    if !enemy_touching_tile {
+                        // Находим и двигаем врага в активной сцене
+                        if let Ok(mut guard) = renderer.write() {
+                            if let Some(enemy) = guard.scene_manager.active_scene.manager.game_objects
+                                .iter_mut()
+                                .find(|obj| *obj.0 == *enemy_id) {
+                                
+                                // Падение с той же скоростью, что и у главного объекта
+                                let fall_vector = (0, -600);
+                                enemy.1.add_position(fall_vector);
+                                
+                                // После падения проверяем, не упал ли враг за пределы
+                                // (эта проверка произойдет на следующем кадре)
+                            }
+                        }
+                    }
+                }
+
+                println!("enemies num: {}", num_enemies);
+
+
+                // Обновление счетчиков для удаления
                 pending_deletions.retain_mut(|(id, counter)| {
                     *counter += 1;
                     if *counter >= TICKS_FOR_DELETION {
                         if let Ok(mut guard) = renderer.write() {
                             guard.scene_manager.active_scene.delete_game_object_by_uid(*id);
                         }
-                        false // Remove from list
+                        false
                     } else {
-                        true // Keep in list
+                        true
                     }
                 });
-
-
-                let mut count = 0;
-                for (id1, obj1) in &objs1 {
-
-                    // treat other objects
-                    for (id2, obj2) in &objs2 {
-                        if id1 == id2 { continue };
-                        let pos1 = obj1.position;
-                        let pos2 = obj2.position;
-
-                        if obj1.kind == ObjectKind::Player &&
-                            check_intersect(pos1.x, pos1.y, main_char_width, main_char_height,
-                                        pos2.x, pos2.y, tile_width, tile_height) {
-                            println!("{} and {}", id1, id2);
-                        }
-                    }
-                }
-                // println!("found {} objects", count);
-
 
                 {
                     let pos = renderer

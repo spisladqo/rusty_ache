@@ -22,6 +22,7 @@ pub enum ObjectKind {
     Tile,
     TileFalling,
     Enemy,
+    Stub,
 }
 
 /// Errors that can arise at the GameObject level.
@@ -62,7 +63,7 @@ pub trait Object {
 
     fn add_position(&mut self, vec: (i32, i32));
 
-    fn get_kind(&self) -> Result<&ObjectKind, GameObjectError>;
+    fn get_kind(&self) -> &ObjectKind;
 
     fn update_kind(&mut self, kind: ObjectKind) -> Result<(), GameObjectError>;
 
@@ -146,8 +147,8 @@ impl Object for GameObject {
         self.position.y += vec.1;
     }
 
-    fn get_kind(&self) -> Result<&ObjectKind, GameObjectError> {
-        Ok(&self.kind)
+    fn get_kind(&self) -> &ObjectKind {
+        &self.kind
     }
 
     fn update_kind(&mut self, kind: ObjectKind) -> Result<(), GameObjectError> {

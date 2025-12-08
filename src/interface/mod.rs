@@ -16,6 +16,7 @@ pub const tile_height: i32 = 57;
 pub const size: i32 = 6;
 pub const main_char_width: i32 = 76;
 pub const main_char_height: i32 = 46;
+pub const death_y: i32 = -1500;
 
 use crate::engine::scene::game_object::{ObjectKind, components::{Component, ComponentType}};
 
@@ -51,7 +52,7 @@ pub struct ObjectWithImage<'a> {
     /// Whether the sprite should cast a shadow.
     has_shadow: bool,
     /// Object kind
-    kind: ObjectKind,
+    pub kind: ObjectKind,
 }
 
 /// Converts a slice of `ObjectWithImage` entries into a vector of fully constructed `GameObject`s.

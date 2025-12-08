@@ -58,18 +58,19 @@ impl GameObjectFactory {
         &mut self,
         components: Vec<Box<dyn Component + Send + Sync>>,
         position: Position,
+        kind: ObjectKind,
     ) -> (usize, GameObject) {
         if self.uids.is_empty() && self.max_objects == self.allocated_objects {
             panic!("Trying to create object above limit")
         } else if !self.uids.is_empty() {
             let uid = *self.uids.iter().next().unwrap();
             self.uids.remove(&uid);
-            return (uid, GameObject::new(components, None, position, ObjectKind::Enemy));
+            return (uid, GameObject::new(components, None, position, kind));
         }
         self.allocated_objects += 1;
         (
             self.allocated_objects,
-            GameObject::new(components, None, position, ObjectKind::Enemy),
+            GameObject::new(components, None, position, kind),
         )
     }
 }
@@ -116,7 +117,7 @@ mod factory_tests {
         let components = create_test_components();
         let position = create_test_position(0, 0, 0, false);
 
-        let (uid, _obj) = factory.create_object(components, position);
+        let (uid, _obj) = factory.create_object(components, position, ObjectKind::Enemy);
 
         assert_eq!(uid, 1);
         assert_eq!(factory.allocated_objects, 1);
@@ -127,7 +128,7 @@ mod factory_tests {
         let mut factory = GameObjectFactory::new(10);
         let position = create_test_position(10, 20, 30, false);
 
-        let (_uid, obj) = factory.create_object(create_test_components(), position);
+        let (_uid, obj) = factory.create_object(create_test_components(), position, ObjectKind::Enemy);
 
         assert_eq!(obj.position.x, 10);
         assert_eq!(obj.position.y, 20);
@@ -142,7 +143,7 @@ mod factory_tests {
             Box::new(Sprite::new(None, false, (0, 0))) as Box<dyn Component + Send + Sync>,
         ];
 
-        let (_uid, obj) = factory.create_object(components, create_test_position(0, 0, 0, false));
+        let (_uid, obj) = factory.create_object(components, create_test_position(0, 0, 0, false), ObjectKind::Enemy);
 
         assert_eq!(obj.components.len(), 2);
     }
@@ -155,15 +156,18 @@ mod factory_tests {
         factory.create_object(
             create_test_components(),
             create_test_position(0, 0, 0, false),
+            ObjectKind::Enemy,
         );
         factory.create_object(
             create_test_components(),
             create_test_position(1, 1, 1, false),
+            ObjectKind::Enemy,
         );
 
         factory.create_object(
             create_test_components(),
             create_test_position(2, 2, 2, false),
+            ObjectKind::Enemy,
         );
     }
 
@@ -174,6 +178,7 @@ mod factory_tests {
         factory.create_object(
             create_test_components(),
             create_test_position(0, 0, 0, false),
+            ObjectKind::Enemy,
         );
 
         factory.uids.insert(1);
@@ -181,6 +186,7 @@ mod factory_tests {
         let (uid, _) = factory.create_object(
             create_test_components(),
             create_test_position(1, 1, 1, false),
+            ObjectKind::Enemy,
         );
 
         assert_eq!(uid, 1);
@@ -195,14 +201,17 @@ mod factory_tests {
         factory.create_object(
             create_test_components(),
             create_test_position(0, 0, 0, false),
+            ObjectKind::Enemy,
         );
         factory.create_object(
             create_test_components(),
             create_test_position(1, 1, 1, false),
+            ObjectKind::Enemy
         );
         factory.create_object(
             create_test_components(),
             create_test_position(2, 2, 2, false),
+            ObjectKind::Enemy
         );
 
         factory.uids.insert(1);
@@ -211,10 +220,12 @@ mod factory_tests {
         let (uid1, _) = factory.create_object(
             create_test_components(),
             create_test_position(3, 3, 3, false),
+            ObjectKind::Enemy
         );
         let (uid2, _) = factory.create_object(
             create_test_components(),
             create_test_position(4, 4, 4, false),
+            ObjectKind::Enemy
         );
 
         assert!(uid1 == 1 || uid1 == 2);
@@ -230,10 +241,12 @@ mod factory_tests {
         factory.create_object(
             create_test_components(),
             create_test_position(0, 0, 0, false),
+            ObjectKind::Enemy
         );
         factory.create_object(
             create_test_components(),
             create_test_position(1, 1, 1, false),
+            ObjectKind::Enemy
         );
 
         factory.uids.insert(1);
@@ -241,6 +254,7 @@ mod factory_tests {
         let (uid, _) = factory.create_object(
             create_test_components(),
             create_test_position(2, 2, 2, false),
+            ObjectKind::Enemy
         );
 
         assert_eq!(uid, 1);
@@ -251,7 +265,7 @@ mod factory_tests {
     fn test_create_object_with_empty_components() {
         let mut factory = GameObjectFactory::new(10);
 
-        let (_uid, obj) = factory.create_object(vec![], create_test_position(0, 0, 0, false));
+        let (_uid, obj) = factory.create_object(vec![], create_test_position(0, 0, 0, false), ObjectKind::Enemy);
 
         assert_eq!(obj.components.len(), 0);
     }
@@ -263,10 +277,12 @@ mod factory_tests {
         factory.create_object(
             create_test_components(),
             create_test_position(0, 0, 0, false),
+            ObjectKind::Enemy
         );
         factory.create_object(
             create_test_components(),
             create_test_position(1, 1, 1, false),
+            ObjectKind::Enemy
         );
 
         factory.uids.insert(5);
@@ -274,6 +290,7 @@ mod factory_tests {
         let (uid, _) = factory.create_object(
             create_test_components(),
             create_test_position(2, 2, 2, false),
+            ObjectKind::Enemy
         );
 
         assert_eq!(uid, 5);
@@ -299,8 +316,9 @@ impl GameObjectManager {
         &mut self,
         components: Vec<Box<dyn Component + Send + Sync>>,
         position: Position,
+        kind: ObjectKind
     ) {
-        let (uid, object) = self.factory.create_object(components, position);
+        let (uid, object) = self.factory.create_object(components, position, kind);
         self.game_objects.insert(uid, object);
     }
 
@@ -359,6 +377,7 @@ mod manager_tests {
         manager.add_game_object(
             create_test_components(),
             create_test_position(0, 0, 0, false),
+            ObjectKind::Enemy
         );
 
         assert_eq!(manager.game_objects.len(), 1);
@@ -370,7 +389,7 @@ mod manager_tests {
         let mut manager = GameObjectManager::new(10);
         let position = create_test_position(15, 25, 35, false);
 
-        manager.add_game_object(create_test_components(), position);
+        manager.add_game_object(create_test_components(), position, ObjectKind::Enemy);
 
         let obj = manager.game_objects.get(&1).unwrap();
         assert_eq!(obj.position.x, 15);
@@ -382,7 +401,7 @@ mod manager_tests {
     fn test_add_game_object_with_empty_components() {
         let mut manager = GameObjectManager::new(10);
 
-        manager.add_game_object(vec![], create_test_position(0, 0, 0, false));
+        manager.add_game_object(vec![], create_test_position(0, 0, 0, false), ObjectKind::Enemy);
 
         assert_eq!(manager.game_objects.len(), 1);
         let obj = manager.game_objects.get(&1).unwrap();
@@ -397,6 +416,7 @@ mod manager_tests {
         manager.add_game_object(
             create_test_components(),
             create_test_position(0, 0, 0, false),
+            ObjectKind::Enemy,
         );
     }
 
@@ -407,6 +427,7 @@ mod manager_tests {
         manager.add_game_object(
             create_test_components(),
             create_test_position(-10, -20, -30, false),
+            ObjectKind::Enemy,
         );
 
         let obj = manager.game_objects.get(&1).unwrap();
@@ -422,6 +443,7 @@ mod manager_tests {
         manager.add_game_object(
             create_test_components(),
             create_test_position(100, 200, 300, false),
+            ObjectKind::Enemy,
         );
 
         let retrieved = manager.game_objects.get(&1);

@@ -47,7 +47,7 @@ impl Scene {
     ) -> Self {
         let mut obj_manager = GameObjectManager::new(256);
         for obj in objects {
-            obj_manager.add_game_object(obj.components, obj.position)
+            obj_manager.add_game_object(obj.components, obj.position, obj.kind)
         }
         Scene {
             manager: obj_manager,

@@ -2,7 +2,7 @@ use rusty_ache::engine::Engine;
 use rusty_ache::engine::scene::game_object::{GameObject, ObjectKind};
 use rusty_ache::engine::scene::game_object::components::script::Script;
 use rusty_ache::engine::scene::game_object::position::Position;
-use rusty_ache::interface::{ObjectWithImage, create_obj_with_img, init_end_scene, init_engine, init_scene};
+use rusty_ache::interface::{ObjectWithImage, create_obj_with_img, death_y, init_end_scene, init_engine, init_scene};
 use rusty_ache::screen::{HEIGHT, WIDTH};
 use rusty_ache::engine::scene_manager::{SceneManager};
 
@@ -67,20 +67,42 @@ fn main() {
     // CHANGE
     let main_ship_obj = create_obj_with_img("src/bin/resources/white_ship.png", 0, 0, true, ObjectKind::Player);
 
-    let tiles_vec = create_tile_objs(1, 600);
-    let tiles_slice : &[ObjectWithImage] = &tiles_vec;
 
-    // let hermit_house_obj = create_obj_with_img("src/bin/resources/junk_house.png", 400, 240, true);
+    let enemy1 = create_obj_with_img("src/bin/resources/white_ship.png", 100, 100, true, ObjectKind::Enemy);
+    let enemy2 = create_obj_with_img("src/bin/resources/white_ship.png", 120, 70, true, ObjectKind::Enemy);
+    let enemy3 = create_obj_with_img("src/bin/resources/white_ship.png", 200, 250, true, ObjectKind::Enemy);
 
-    let (mut scene, game_objs) = init_scene(
-        tiles_slice,
-        main_ship_obj,
-    );
+    let enemies = vec![enemy1, enemy2, enemy3];
+    let tiles_vec = create_tile_objs(2, 600);
 
-    // for obj in game_objs {
-        // let id = (if let Some(uid) = scene.get_game_object_uid(obj) {uid} else { continue; }) ; // collision is danger
-        // println!("{}", id);
+    // Concatenate the two vectors
+    let mut all_objects = tiles_vec;
+    all_objects.extend(enemies);
+
+    // Okay
+    // for obj in &all_objects {
+    //     if obj.kind == ObjectKind::Tile {
+    //         println!("tile found\n");
+    //     }
     // }
+
+    let (mut scene, game_objs) = init_scene(&all_objects, main_ship_obj);
+
+    // for obj in &game_objs {
+    //     if obj.kind == ObjectKind::Tile {
+    //         println!("tile found");
+    //     }
+    // }
+
+    let objs1 = scene.get_game_objects();
+
+    for obj in objs1 {
+        if obj.1.kind == ObjectKind::Tile {
+            println!("tile found");
+        } else if obj.1.kind == ObjectKind::Enemy {
+            println!("enemy found");
+        }
+    }
 
     let end_scene = init_end_scene("src/bin/resources/you_died.jpg", None);
     let mut engine = init_engine(scene, end_scene, WIDTH, HEIGHT);
@@ -90,8 +112,8 @@ fn main() {
     std::thread::spawn(move || {
         loop {
             let (x, y) = *main_pos_arc.read().unwrap();
-            println!("main obj pos: {} {}", x, y);
-            if y < -100 {
+            // println!("main obj pos: {} {}", x, y);
+            if y < death_y {
                 end_scene_flag.store(true, std::sync::atomic::Ordering::SeqCst);
                 break; // Optional: stop monitoring after triggering
             }
