@@ -16,7 +16,8 @@ pub const tile_height: i32 = 57;
 pub const size: i32 = 6;
 pub const main_char_width: i32 = 76;
 pub const main_char_height: i32 = 46;
-pub const death_y: i32 = -1500;
+pub const death_y: i32 = -5000;
+pub const layer_gap: i32 = 600;
 
 use crate::engine::scene::game_object::{ObjectKind, components::{Component, ComponentType}};
 

@@ -2,10 +2,9 @@ use rusty_ache::engine::Engine;
 use rusty_ache::engine::scene::game_object::{GameObject, ObjectKind};
 use rusty_ache::engine::scene::game_object::components::script::Script;
 use rusty_ache::engine::scene::game_object::position::Position;
-use rusty_ache::interface::{ObjectWithImage, create_obj_with_img, death_y, init_end_scene, init_engine, init_scene};
+use rusty_ache::interface::{ObjectWithImage, create_obj_with_img, death_y, init_end_scene, init_engine, init_scene, layer_gap};
 use rusty_ache::screen::{HEIGHT, WIDTH};
 use rusty_ache::engine::scene_manager::{SceneManager};
-
 
 use rusty_ache::interface::{tile_width, tile_height, size, main_char_width, main_char_height};
 
@@ -15,12 +14,12 @@ fn create_tile_objs(layer_num: i32, layer_gap_px: i32) -> Vec<ObjectWithImage<'s
     // Calculate center of screen
     let center_x: i32 = (WIDTH as i32) / 2 - (tile_width as i32)/ 2;
     let center_y: i32 = -(HEIGHT as i32) / 2 + (tile_height as i32) / 2;
-    // let center_x = 0;
-    // let center_y = 0;
 
     for layer in 0..layer_num {
         // Calculate vertical offset for this layer
-        let layer_y_offset = layer * layer_gap_px;
+        // Для построения сверху вниз: вычитаем, а не добавляем
+        // layer * layer_gap_px будет положительным, поэтому вычитаем из center_y
+        let layer_y_offset = center_y - (layer * layer_gap_px);
 
         for sum in 0..=size*2 {
             let tiles_in_row = if sum <= size {
@@ -37,14 +36,13 @@ fn create_tile_objs(layer_num: i32, layer_gap_px: i32) -> Vec<ObjectWithImage<'s
 
                 // Calculate hexagonal grid coordinates relative to center
                 let x_offset = (q as i32 * (tile_width / 2)) - (r as i32 * (tile_width / 2));
-                let mut y_offset = (q as i32 * (tile_height / 2)) + (r as i32 * (tile_height / 2));
+                let y_offset_hex = (q as i32 * (tile_height / 2)) + (r as i32 * (tile_height / 2));
                 
                 // Apply layer offset to Y coordinate
-                y_offset += layer_y_offset;
+                let y = layer_y_offset + y_offset_hex;
 
-                // Calculate final position centered on screen
+                // X coordinate remains the same
                 let x = center_x + x_offset;
-                let y = center_y + y_offset;
 
                 println!("Layer {}: position of tile object is ({}, {})", layer, x, y);
 
@@ -73,7 +71,7 @@ fn main() {
     let enemy3 = create_obj_with_img("src/bin/resources/white_ship.png", 200, 250, true, ObjectKind::Enemy);
 
     let enemies = vec![enemy1, enemy2, enemy3];
-    let tiles_vec = create_tile_objs(2, 600);
+    let tiles_vec = create_tile_objs(5, layer_gap);
 
     // Concatenate the two vectors
     let mut all_objects = tiles_vec;
@@ -96,15 +94,8 @@ fn main() {
 
     let objs1 = scene.get_game_objects();
 
-    for obj in objs1 {
-        if obj.1.kind == ObjectKind::Tile {
-            println!("tile found");
-        } else if obj.1.kind == ObjectKind::Enemy {
-            println!("enemy found");
-        }
-    }
-
-    let end_scene = init_end_scene("src/bin/resources/you_died.jpg", None);
+    let end_scene: rusty_ache::engine::scene_manager::EndScene = init_end_scene("src/bin/resources/you_died.jpg", None);
+    let win_scene = init_end_scene("src/bin/resources/dragons_death.jpg", None);
     let mut engine = init_engine(scene, end_scene, WIDTH, HEIGHT);
 
     let main_pos_arc = engine.main_pos.clone();
@@ -115,11 +106,12 @@ fn main() {
             // println!("main obj pos: {} {}", x, y);
             if y < death_y {
                 end_scene_flag.store(true, std::sync::atomic::Ordering::SeqCst);
+                println!("You lost!");
                 break; // Optional: stop monitoring after triggering
             }
             
             // ✅ Add sleep to prevent busy-waiting
-            // std::thread::sleep(std::time::Duration::from_millis(16)); // ~60 checks per second
+            std::thread::sleep(std::time::Duration::from_millis(16)); // ~60 checks per second
         }
     });
 
